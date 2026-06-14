@@ -345,8 +345,46 @@
       p.style.backgroundImage = "url('" + PHOTO + "')";
       p.style.backgroundSize = IMG_W + 'px ' + IMG_H + 'px';
       p.style.backgroundPosition = '-' + (col*PS) + 'px -' + (row*PS) + 'px';
+      // Mouse drag
       p.addEventListener('dragstart', () => { dragIdx = idx; p.classList.add('dragging'); });
       p.addEventListener('dragend', () => p.classList.remove('dragging'));
+      // Touch support for iPhone/iPad
+      p.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        dragIdx = idx;
+        p.classList.add('dragging');
+        const touch = e.touches[0];
+        p._clone = p.cloneNode(true);
+        p._clone.style.position = 'fixed';
+        p._clone.style.zIndex = '9999';
+        p._clone.style.opacity = '0.85';
+        p._clone.style.pointerEvents = 'none';
+        p._clone.style.width = PS + 'px';
+        p._clone.style.height = PS + 'px';
+        p._clone.style.left = (touch.clientX - PS/2) + 'px';
+        p._clone.style.top  = (touch.clientY - PS/2) + 'px';
+        p._clone.style.borderRadius = '4px';
+        p._clone.style.boxShadow = '0 8px 24px rgba(155,79,110,0.5)';
+        document.body.appendChild(p._clone);
+      }, { passive: false });
+      p.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        if (p._clone) {
+          p._clone.style.left = (touch.clientX - PS/2) + 'px';
+          p._clone.style.top  = (touch.clientY - PS/2) + 'px';
+        }
+      }, { passive: false });
+      p.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        p.classList.remove('dragging');
+        if (p._clone) { p._clone.remove(); p._clone = null; }
+        const touch = e.changedTouches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const cell = el ? el.closest('.cell') : null;
+        if (cell) handleDrop(cell);
+        else dragIdx = null;
+      }, { passive: false });
       area.appendChild(p);
       pieces[idx] = p;
     });
